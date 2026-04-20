@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="PropCalc">
+<meta name="theme-color" content="#0a8f6e">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>PropCalc — 부동산 투자 시뮬레이터</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
+:root{--bg:#f5f6f8;--surface:#fff;--surface2:#f0f2f5;--border:rgba(0,0,0,.08);--border2:rgba(0,0,0,.14);--text:#1a1d24;--text2:#52576a;--text3:#9096a8;--green:#0a8f6e;--green-dim:rgba(10,143,110,.08);--green-border:rgba(10,143,110,.25);--red:#d9363e;--blue:#2563eb;--blue-dim:rgba(37,99,235,.08);--amber:#c47d10;--amber-dim:rgba(196,125,16,.08);--orange:#d4580a;--orange-dim:rgba(212,88,10,.08);--orange-border:rgba(212,88,10,.25);--purple:#6d4fc4;--mono:'DM Mono',monospace}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Pretendard',-apple-system,sans-serif;font-size:14px;line-height:1.6;min-height:100vh}
+header{padding:22px 28px 16px;border-bottom:1px solid var(--border);background:var(--surface);display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:10px}
+header h1{font-size:18px;font-weight:600;letter-spacing:-.02em}
+header h1 span{color:var(--green)}
+.header-sub{font-size:12px;color:var(--text3);margin-top:3px}
+.header-meta{font-size:11px;color:var(--text3);font-family:var(--mono)}
+.container{max-width:1300px;margin:0 auto;padding:18px 18px 48px}
+.preset-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.preset-label{font-size:11.5px;color:var(--text3);margin-right:4px}
+.pb{font-size:11.5px;font-family:var(--mono);padding:4px 12px;border:1px solid var(--border2);border-radius:6px;background:transparent;color:var(--text2);cursor:pointer;transition:all .15s}
+.pb:hover{border-color:var(--green);color:var(--text)}
+.pb.on{background:var(--green-dim);border-color:var(--green);color:var(--green);font-weight:500}
+.top-panels{display:grid;grid-template-columns:1fr 1fr 300px;gap:12px;margin-bottom:12px}
+@media(max-width:900px){.top-panels{grid-template-columns:1fr 1fr}}
+@media(max-width:580px){.top-panels{grid-template-columns:1fr}}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px}
+.panel.lever-panel{border-color:var(--blue-dim);background:linear-gradient(135deg,#fff 85%,rgba(37,99,235,.03))}
+.panel.alt-panel{border-color:var(--amber-dim);background:linear-gradient(135deg,#fff 85%,rgba(196,125,16,.03))}
+.panel-title{font-size:10.5px;font-weight:500;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px}
+.panel-title.blue{color:var(--blue)}
+.panel-title.amber{color:var(--amber)}
+.ctrl-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px 20px}
+@media(max-width:460px){.ctrl-grid{grid-template-columns:1fr}}
+.ctrl{display:flex;flex-direction:column;gap:5px}
+.ctrl-top{display:flex;justify-content:space-between;align-items:baseline}
+.ctrl-lbl{font-size:11.5px;color:var(--text2)}
+.ctrl-val{font-size:13px;font-weight:500;font-family:var(--mono);color:var(--text)}
+input[type=range]{width:100%;height:3px;appearance:none;background:var(--border2);border-radius:2px;outline:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{appearance:none;width:13px;height:13px;border-radius:50%;background:var(--green);cursor:pointer;transition:transform .1s}
+input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.2)}
+input[type=range].blue-thumb::-webkit-slider-thumb{background:var(--blue)}
+input[type=range].amber-thumb::-webkit-slider-thumb{background:var(--amber)}
+.ctrl-range-labels{display:flex;justify-content:space-between;font-size:10px;color:var(--text3);font-family:var(--mono)}
+.tax-breakdown{display:flex;flex-direction:column}
+.tax-row{display:flex;justify-content:space-between;font-size:11.5px;padding:5px 0;border-bottom:1px solid var(--border)}
+.tax-row:last-child{border-bottom:none;font-weight:500;font-size:12.5px;padding-top:8px}
+.tk{color:var(--text2)}.tv{font-family:var(--mono);color:var(--text)}
+.tv.neg{color:var(--red)}.tv.pos{color:var(--green)}
+.lever-summary{font-size:11.5px;color:var(--text2);padding:8px 12px;background:var(--surface2);border-radius:8px;line-height:1.65;margin-top:8px}
+.lever-summary b{color:var(--text);font-weight:600}
+select{background:var(--surface2);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:11.5px;padding:6px 8px;cursor:pointer;outline:none;font-family:'Pretendard',sans-serif}
+select:focus{border-color:var(--green)}
+.divider{height:1px;background:var(--border);margin:10px 0}
+input[type=checkbox]{width:16px;height:16px;accent-color:var(--green);cursor:pointer}
+.metric-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:9px;margin-bottom:12px}
+@media(max-width:900px){.metric-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:700px){.metric-grid{grid-template-columns:1fr 1fr}}
+.mc{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;position:relative;overflow:hidden}
+.mc::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--green);opacity:.6}
+.mc.mc-blue::before{background:var(--blue)}
+.mc-label{font-size:10.5px;color:var(--text3);margin-bottom:5px;line-height:1.4}
+.mc-value{font-size:18px;font-weight:600;font-family:var(--mono);color:var(--green);letter-spacing:-.02em}
+.mc-value.red{color:var(--red)}.mc-value.blue{color:var(--blue)}
+.mc-sub{font-size:10.5px;color:var(--text3);font-family:var(--mono);margin-top:3px}
+.mini-stats{display:flex;gap:16px;flex-wrap:wrap;font-size:11.5px;color:var(--text3);margin-bottom:12px;padding:6px 0}
+.mini-stats b{font-weight:500}
+.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin-bottom:12px}
+.chart-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px}
+.chart-title{font-size:11.5px;font-weight:500;color:var(--text2)}
+.legend{display:flex;gap:12px;flex-wrap:wrap}
+.li{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text3)}
+.ld{width:10px;height:10px;border-radius:2px}
+.chart-wrap{position:relative;width:100%;height:260px}
+.tabs{display:flex;gap:6px;margin-bottom:10px}
+.tab{font-size:11.5px;font-family:var(--mono);padding:4px 12px;border:1px solid var(--border2);border-radius:6px;background:transparent;color:var(--text2);cursor:pointer;transition:all .15s}
+.tab:hover{border-color:var(--green);color:var(--text)}
+.tab.on{background:var(--green-dim);border-color:var(--green);color:var(--green);font-weight:500}
+.tbl-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:12px;display:none}
+.tbl-card.show{display:block}
+.tbl-header{padding:11px 16px;border-bottom:1px solid var(--border);font-size:10.5px;color:var(--text3);font-weight:500;letter-spacing:.08em;text-transform:uppercase}
+.tbl-scroll{overflow-x:auto;max-height:360px;overflow-y:auto}
+table{width:100%;border-collapse:collapse;font-size:11.5px}
+th{text-align:right;padding:7px 11px;color:var(--text3);font-weight:500;border-bottom:1px solid var(--border);white-space:nowrap;font-size:10.5px;letter-spacing:.04em;background:var(--surface2);position:sticky;top:0}
+th:first-child{text-align:left}
+td{text-align:right;padding:7px 11px;border-bottom:1px solid var(--border);color:var(--text2);font-family:var(--mono);font-size:11.5px;white-space:nowrap}
+td:first-child{text-align:left;color:var(--text3);font-family:'Pretendard',sans-serif}
+tr:last-child td{border-bottom:none}
+td.pos{color:var(--green)!important;font-weight:500}
+td.neg{color:var(--red)!important}
+td.amber{color:var(--amber)!important;font-weight:500}
+.alt-compare{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+@media(max-width:580px){.alt-compare{grid-template-columns:1fr}}
+.alt-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+.alt-card-title{font-size:10.5px;font-weight:500;color:var(--text3);letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px}
+.alt-card-title.amber{color:var(--amber)}
+.alt-card-title.green{color:var(--green)}
+.alt-row{display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid var(--border)}
+.alt-row:last-child{border-bottom:none}
+.alt-k{color:var(--text2)}.alt-v{font-family:var(--mono);font-weight:500}
+.note{font-size:10.5px;color:var(--text3);line-height:1.7;padding:10px 16px;border-top:1px solid var(--border);background:var(--surface2)}
+</style>
+</head>
+<body>
+<header>
+<div>
+<h1><span>PropCalc</span> 부동산 투자 시뮬레이터</h1>
+<div class="header-sub">취득세 · 보유세 · 양도세 · 레버리지 · 월 현금흐름 · 금융자산 대안 비교</div>
+</div>
+<div class="header-meta">2026 세법 기준</div>
+</header>
+<div class="container">
+
+<div class="preset-row">
+<span class="preset-label">시나리오</span>
+<button class="pb on" onclick="ap('a')">16억</button>
+<button class="pb" onclick="ap('b')">18억</button>
+<button class="pb" onclick="ap('c')">25억</button>
+<button class="pb" onclick="ap('d')">35억</button>
+<button class="pb" onclick="ap('cx')">직접입력</button>
+</div>
+
+<div class="top-panels">
+<div class="panel">
+<div class="panel-title">매수 · 보유 조건</div>
+<div class="ctrl-grid">
+<div class="ctrl"><div class="ctrl-top"><span class="ctrl-lbl">매수가격</span><span class="ctrl-val" id="vP"></span></div><input type="range" min="10000" max="500000" step="1000" value="160000" id="sP" oninput="run()"><div class="ctrl-range-labels"><span>1억</span><span>50억</span></div></div>
+<div class="ctrl"><div class="ctrl-top"><span class="ctrl-lbl">보유기간</span><span class="ctrl-val" id="vH"></span></div><input type="range" min="1" max="30" step="1" value="10" id="sH" oninput="run()"><div class="ctrl-range-labels"><span>1년</span><span>30년</span></div></div>
+<div class="ctrl"><div class="ctrl-top"><span class="ctrl-lbl">연간 상승률</span><span class="ctrl-val" id="vG"></span></div><input type="range" min="-50" max="150" step="5" value="30" id="sG" oninput="run()"><div class="ctrl-range-labels"><span>-5%</span><span>15%</span></div></div>
+<div class="ctrl"><div class="ctrl-top"><span class="ctrl-lbl">공시지가율</span><span class="ctrl-val" id="vO"></span></div><input type="range" min="30" max="90" step="1" value="69" id="sO" oninput="run()"><div class="ctrl-range-labels"><span>30%</span><span>90%</span></div></div>
+<div class="ctrl"><div class="ctrl-top"><span class="ctrl-lbl">공정시장가액비율</span><span class="ctrl-val" id="vF"></span></div><input type="range" min="40" max="100" step="5" value="60" id="sF" oninput="run()"><div class="ctrl-range-labels"><span>40%</span><span>100%</span></div></div>
+<div class="ctrl"><div class="ctrl-top"><span class="ctrl-lbl">거주기간</span><span class="ctrl-val" id="vL"></span></div><input type="range" min="0" max="30" step="1" value="10" id="sL" oninput="run()"><div class="ctrl-range-labels"><span>0년</span><span>30년</span></div></div>
+</div>
+<div class="divider"></div>
+<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+<div style="display:flex;align-items:center;gap:6px"><span class="ctrl-lbl">주택 수</span><select id="selHC" onchange="run()"><option value="1">1주택</option><option value="2">2주택</option><option value="3">3주택+</option></select></div>
+<label style="display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--text2);cursor:pointer"><input type="checkbox" id="chkReg" checked onchange="run()">조정대상지역</label>
+</div>
+</div>
+
+<div class="panel lever-panel">
+<div class="panel-title blue">레버리지 (주담대)</div>
+<div class="ctrl-grid">
+<div class="ctrl"><div class="ctrl-top"><span class="ctrl-lbl">LTV (대출비율)</span><span class="ctrl-val" id="vLTV"></span></div><input type="range" min="0" max="80" step="1" value="50" id="sLTV" class="blue-thumb" oninput="run()"><div class="ctrl-range-labels"><span>0%</span><span>80%</span></div></div>
+<div class="ctrl"><div class="ctrl-top"><span class="ctrl-lbl">대출금리</span><span class="ctrl-val" id="vLR"></span></div><input type="range" min="10" max="80" step="1" value="35" id="sLR" class="blue-thumb" oninput="run()"><div class="ctrl-range-labels"><span>1%</span><span>8%</span></div></div>
+<div class="ctrl"><div class="ctrl-top"><span class="ctrl-lbl">대출기간</span><span class="ctrl-val" id="vLT"></span></div><input type="range" min="5" max="40" step="1" value="30" id="sLT" class="blue-thumb" oninput="run()"><div class="ctrl-range-labels"><span>5년</span><span>40년</span></div></div>
+<div class="ctrl"><div class="ctrl-top"><span class="ctrl-lbl">매수 중개수수료</span><span class="ctrl-val" id="vBR"></span></div><input type="range" min="0" max="70" step="1" value="40" id="sBR" oninput="run()"><div class="ctrl-range-labels"><span>0%</span><span>0.7%</span></div></div>
+<div class="ctrl"><div class="ctrl-top"><span class="ctrl-lbl">매도 중개수수료</span><span class="ctrl-val" id="vSR"></span></div><input type="range" min="0" max="70" step="1" value="40" id="sSR" oninput="run()"><div class="ctrl-range-labels"><span>0%</span><span>0.7%</span></div></div>
+</div>
+<div class="lever-summary" id="loanSum"></div>
+</div>
+
+<div class="panel">
+<div class="panel-title">세금 · 비용 요약</div>
+<div class="tax-breakdown" id="taxPanel"></div>
+</div>
+</div>
+
+<!-- 금융자산 대안 비교 설정 -->
+<div class="panel alt-panel" style="margin-bottom:12px;">
+<div class="panel-title amber">금융자산 대안 비교</div>
+<div style="display:flex;gap:20px;align-items:start;flex-wrap:wrap">
+<div class="ctrl" style="flex:1;min-width:150px"><div class="ctrl-top"><span class="ctrl-lbl">대안 연수익률 (무레버)</span><span class="ctrl-val" id="vAlt"></span></div><input type="range" min="0" max="150" step="5" value="70" id="sAlt" class="amber-thumb" oninput="run()"><div class="ctrl-range-labels"><span>0%</span><span>15%</span></div></div>
+<div class="ctrl" style="flex:1;min-width:150px"><div class="ctrl-top"><span class="ctrl-lbl">Exit 세율</span><span class="ctrl-val" id="vAltTax"></span></div><input type="range" min="0" max="300" step="1" value="154" id="sAltTax" class="amber-thumb" oninput="run()"><div class="ctrl-range-labels"><span>0%</span><span>30%</span></div></div>
+<div style="font-size:11px;color:var(--text3);max-width:280px;line-height:1.55">동일 초기투자금을 무레버 금융자산에 복리 투자 후 매도 시 세율 적용.<br>미국주식 양도세 22%, 국내주식 배당/이자 15.4%, ISA 9.9% 등 선택.</div>
+</div>
+</div>
+
+<div class="metric-grid" id="metrics"></div>
+<div class="mini-stats" id="miniStats"></div>
+
+<!-- 대안 비교 카드 -->
+<div class="alt-compare" id="altCompare"></div>
+
+<div class="chart-card">
+<div class="chart-header">
+<span class="chart-title">연도별 자산가치 · 순수익 · 누적비용</span>
+<div class="legend">
+<span class="li"><span class="ld" style="background:#2563eb"></span>시장가격</span>
+<span class="li"><span class="ld" style="background:#0a8f6e"></span>자산순가치</span>
+<span class="li"><span class="ld" style="background:var(--red);width:14px;height:2px;border-radius:0;border-top:2px dashed var(--red)"></span>누적비용</span>
+<span class="li"><span class="ld" style="background:var(--amber)"></span>금융자산 대안</span>
+</div>
+</div>
+<div class="chart-wrap"><canvas id="ch"></canvas></div>
+</div>
+
+<div class="tabs">
+<button class="tab on" onclick="sw(this,'cashflow')">월 현금흐름</button>
+<button class="tab" onclick="sw(this,'loan')">대출 상환표</button>
+<button class="tab" onclick="sw(this,'year')">연도별 상세</button>
+<button class="tab" onclick="sw(this,'tax')">세금 내역</button>
+</div>
+<div class="tbl-card show" id="t-cashflow"><div class="tbl-header">월간 현금흐름 (보유기간 중)</div><div class="tbl-scroll"><table><thead><tr><th style="text-align:left">연차</th><th>대출 상환</th><th>보유세 (월)</th><th>월 총지출</th><th>연 총지출</th><th>일 환산</th></tr></thead><tbody id="tbCF"></tbody></table></div></div>
+<div class="tbl-card" id="t-loan"><div class="tbl-header">대출 상환표 (원리금균등)</div><div class="tbl-scroll"><table><thead><tr><th style="text-align:left">연차</th><th>상환액</th><th>이자</th><th>원금</th><th>누적이자</th><th>잔액</th></tr></thead><tbody id="tbLoan"></tbody></table></div></div>
+<div class="tbl-card" id="t-year"><div class="tbl-header">연도별 상세</div><div class="tbl-scroll"><table><thead><tr><th style="text-align:left">연차</th><th>시장가</th><th>보유세</th><th>원리금</th><th>누적비용</th><th>순가치</th></tr></thead><tbody id="tbYear"></tbody></table></div></div>
+<div class="tbl-card" id="t-tax"><div class="tbl-header">세금 · 비용 내역</div><div class="tbl-scroll"><table><tbody id="tbTax"></tbody></table></div></div>
+
+<div class="note">
+◆ 취득세: 1주택 1~3% 누진, 2주택 8%, 3주택+ 12% (지방교육세·농특세 포함) · 양도세 필요경비: 취득세+중개수수료 공제 반영 &nbsp;
+◆ 보유세: 재산세 0.1~0.4% 누진 + 종부세 0.5~2.7% 누진 (공시지가 × 공정시장가액비율 기준) &nbsp;
+◆ 양도세: 1세대1주택 12억 이하 비과세, 초과분 과세, 장특공제 최대 80%, 기본세율 6~45% &nbsp;
+◆ ROE 계산: (매도수령액 − 초기투자금 − 보유기간 누적이자 − 보유세) / 초기투자금. 원금상환분은 잔여대출 감소로 매도수령액에 반영됨 &nbsp;
+◆ 금융자산 대안: 동일 초기투자금을 무레버 복리 투자, 수익실현 시 15.4% 과세 적용 &nbsp;
+◆ 본 시뮬레이터는 참고용이며 법적 효력이 없습니다.
+</div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const fW=v=>{const a=Math.abs(v),s=v<0?'-':'';if(a>=1e8)return s+(a/1e8).toFixed(a>=1e9?0:1)+'억원';if(a>=1e4)return s+(a/1e4).toFixed(0)+'만원';return s+Math.round(a).toLocaleString()+'원'};
+const fM=v=>{const a=Math.abs(v),s=v<0?'-':'';if(a>=10000)return s+(a/10000).toFixed(1)+'억';return s+Math.round(a).toLocaleString()+'만'};
+const fP=v=>v.toFixed(1)+'%';
+const fC=v=>Math.round(v).toLocaleString()+'만원';
+
+const PRESETS={a:{P:160000,H:10,G:30,O:69,F:60,L:10,LTV:50,LR:35,LT:30},b:{P:180000,H:10,G:30,O:69,F:60,L:10,LTV:50,LR:35,LT:30},c:{P:250000,H:15,G:25,O:69,F:60,L:10,LTV:40,LR:35,LT:30},d:{P:350000,H:10,G:20,O:69,F:60,L:10,LTV:40,LR:35,LT:30}};
+function ap(k){document.querySelectorAll('.preset-row .pb').forEach(b=>b.classList.remove('on'));event.target.classList.add('on');if(k==='cx')return;const p=PRESETS[k];$('sP').value=p.P;$('sH').value=p.H;$('sG').value=p.G;$('sO').value=p.O;$('sF').value=p.F;$('sL').value=p.L;$('sLTV').value=p.LTV;$('sLR').value=p.LR;$('sLT').value=p.LT;run()}
+
+function calcAcqTaxRate(p,h){if(h>=3)return .12;if(h==2)return .08;if(p<=60000)return .01;if(p<=90000)return .01+(p-60000)/30000*.02;return .03}
+function calcAcqTax(p,h){const r=calcAcqTaxRate(p,h),at=p*r;let et,ft;if(h==1){et=p*(r*.5)*.2;ft=r>.02?p*.002:0}else{et=p*r*.1;ft=p*.002}return{acqTax:at,eduTax:et,farmTax:ft,rate:r,total:at+et+ft}}
+function calcBF(pM,rP){const p=pM*1e4,L=[{m:5e7,c:.006,l:25e4},{m:2e8,c:.005,l:8e5},{m:9e8,c:.004},{m:12e8,c:.005},{m:15e8,c:.006},{m:1/0,c:.007}];let mx=.006,lm=25e4;for(const l of L){if(p<l.m){mx=l.c;lm=l.l||null;break}}let f=p*Math.min(rP/100,mx);if(lm)f=Math.min(f,lm);return f/1e4}
+function calcPT(aM){const a=aM*1e4;let t=0,pv=0;for(const b of[{l:6e7,r:.001},{l:1.5e8,r:.0015},{l:3e8,r:.0025},{l:1/0,r:.004}]){const x=Math.min(a,b.l)-pv;if(x>0)t+=x*b.r;pv=b.l;if(a<=b.l)break}return(t+t*.2+t*.14)/1e4}
+function calcJB(aM,h){const th=h==1?120000:60000;if(aM<=th)return 0;const a=(aM-th)*1e4;let t=0,pv=0;const B=h==1?[{l:1.5e8,r:.005},{l:3e8,r:.007},{l:6e8,r:.01},{l:12e8,r:.014},{l:5e9,r:.02},{l:1/0,r:.027}]:[{l:3e8,r:.005},{l:6e8,r:.007},{l:12e8,r:.01},{l:25e8,r:.014},{l:94e8,r:.02},{l:1/0,r:.027}];for(const b of B){const x=Math.min(a,b.l)-pv;if(x>0)t+=x*b.r;pv=b.l;if(a<=b.l)break}return(t+t*.2)/1e4}
+function calcCGT(buy,sell,hy,ly,h,reg,expenseDeduct){
+  const g=sell-buy-(expenseDeduct||0);if(g<=0)return{tax:0,local:0,total:0,tg:0,lr:0,eg:0};
+  const one=h==1,ex=120000;
+  if(one&&hy>=2&&(!reg||ly>=2)&&sell<=ex)return{tax:0,local:0,total:0,tg:0,lr:0,eg:g};
+  let tg=g,eg=0,lr=0;
+  if(one&&hy>=2&&(!reg||ly>=2)){if(sell>ex){const o=(sell-ex)/sell;tg=g*o;eg=g-tg}if(hy>=3&&ly>=2)lr=Math.min(Math.min(Math.max(hy-2,0)*4,40)+Math.min(Math.max(ly-1,0)*4,40),80);else if(hy>=3)lr=Math.min((hy-2)*2,30)}else if(!one&&hy>=3){lr=Math.min((hy-2)*2,30)}
+  tg=Math.max(tg*(1-lr/100)-250,0);
+  const B=[{l:1400,r:.06,d:0},{l:5000,r:.15,d:126},{l:8800,r:.24,d:576},{l:15000,r:.35,d:1544},{l:30000,r:.38,d:1994},{l:50000,r:.40,d:2594},{l:100000,r:.42,d:3594},{l:1/0,r:.45,d:6594}];
+  let tx=0;for(const b of B){if(tg<=b.l){tx=tg*b.r-b.d;break}}tx=Math.max(tx,0);const lt=tx*.1;return{tax:tx,local:lt,total:tx+lt,tg,lr,eg}
+}
+function mPay(P,ar,yrs){if(P<=0||yrs<=0)return 0;if(ar<=0)return P/(yrs*12);const mr=ar/100/12,n=yrs*12;return P*mr*Math.pow(1+mr,n)/(Math.pow(1+mr,n)-1)}
+function buildLS(P,ar,yrs,maxY){const mr=ar/100/12,mp=mPay(P,ar,yrs);const s=[];let bal=P;for(let y=1;y<=Math.min(yrs,maxY);y++){let yI=0,yP=0;for(let m=0;m<12;m++){const ip=bal*mr,pp=mp-ip;yI+=ip;yP+=pp;bal=Math.max(bal-pp,0)}s.push({year:y,interest:Math.round(yI),principal:Math.round(yP),payment:Math.round(yI+yP),balance:Math.round(bal)})}return{monthly:mp,schedule:s}}
+
+function sw(el,id){document.querySelectorAll('.tabs .tab').forEach(t=>t.classList.remove('on'));el.classList.add('on');['cashflow','loan','year','tax'].forEach(k=>{$('t-'+k).classList.toggle('show',k===id)})}
+
+let chart=null;
+function run(){
+  const price=+$('sP').value,hy=+$('sH').value,gr=+$('sG').value/10/100,ofr=+$('sO').value/100,fr=+$('sF').value/100;
+  let ly=Math.min(+$('sL').value,hy);$('sL').max=hy;if(+$('sL').value>hy)$('sL').value=hy;
+  const hc=+$('selHC').value,reg=$('chkReg').checked;
+  const ltv=+$('sLTV').value,lrateR=+$('sLR').value/10,lterm=+$('sLT').value;
+  const brR=+$('sBR').value/100,sbrR=+$('sSR').value/100;
+  const altRate=+$('sAlt').value/10/100;
+  const altTaxRate=+$('sAltTax').value/10/100;
+
+  $('vP').textContent=fM(price);$('vH').textContent=hy+'년';$('vG').textContent=fP(gr*100);
+  $('vO').textContent=Math.round(ofr*100)+'%';$('vF').textContent=Math.round(fr*100)+'%';$('vL').textContent=ly+'년';
+  $('vLTV').textContent=ltv+'%';$('vLR').textContent=fP(lrateR);$('vLT').textContent=lterm+'년';
+  $('vBR').textContent=fP(brR);$('vSR').textContent=fP(sbrR);$('vAlt').textContent=fP(altRate*100);$('vAltTax').textContent=fP(altTaxRate*100);
+
+  const loanAmt=Math.round(price*ltv/100),equity=price-loanAmt;
+  const acq=calcAcqTax(price,hc),buyBk=calcBF(price,brR),buyCost=acq.total+buyBk;
+  const initialCash=equity+buyCost,mp=mPay(loanAmt,lrateR,lterm),ls=buildLS(loanAmt,lrateR,lterm,hy);
+  const expenseDeduct=acq.total+buyBk; // 필요경비 (취득세+매수중개료)
+
+  $('loanSum').innerHTML=loanAmt>0
+    ?`대출 <b>${fM(loanAmt)}</b> · 월 상환 <b>${Math.round(mp).toLocaleString()}만원</b> · 자기자본 ${fM(equity)} + 취득비 ${fM(Math.round(buyCost))} = 초기투자 <b>${fM(Math.round(initialCash))}</b>`
+    :'대출 없음 (전액 자기자본)';
+
+  let cumHT=0,cumLP=0,cumInt=0,cumPrin=0;const years=[];
+  for(let y=1;y<=hy;y++){
+    const mv=price*Math.pow(1+gr,y),assessed=mv*ofr,tb=assessed*fr;
+    const pt=calcPT(tb),jb=calcJB(tb,hc),ht=pt+jb;cumHT+=ht;
+    const lsY=ls.schedule[y-1]||{interest:0,principal:0,payment:0,balance:0};
+    cumLP+=lsY.payment;cumInt+=lsY.interest;cumPrin+=lsY.principal;
+    years.push({year:y,mktVal:Math.round(mv),ht:Math.round(ht),cumHT:Math.round(cumHT),lPay:lsY.payment,lInt:lsY.interest,cumLP:Math.round(cumLP),cumInt:Math.round(cumInt),cumPrin:Math.round(cumPrin),remLoan:Math.round(lsY.balance)});
+  }
+
+  const sellPrice=Math.round(price*Math.pow(1+gr,hy)),sellBk=calcBF(sellPrice,sbrR);
+  const cgt=calcCGT(price,sellPrice,hy,ly,hc,reg,expenseDeduct),remainLoan=years.length?years[hy-1].remLoan:loanAmt;
+  const sellCost=cgt.total+sellBk,sellProceeds=sellPrice-remainLoan-sellCost;
+
+  /* ── 수정된 ROE: 이자비용+보유세를 차감 ── */
+  const netGain=sellProceeds-initialCash-cumInt-cumHT;
+  const netReturn=(netGain/initialCash)*100;
+  const annReturn=(Math.pow(Math.max(0,(initialCash+netGain))/initialCash,1/hy)-1)*100;
+  /* 무레버: 동일하게 이자 없고 보유세는 동일 적용 */
+  const noLevCGT=calcCGT(price,sellPrice,hy,ly,hc,reg,expenseDeduct);
+  const noLevNet=(sellPrice-price)-buyCost-cumHT-noLevCGT.total-sellBk;
+  const noLevReturn=(noLevNet/(price+buyCost))*100;
+  const noLevAnn=(Math.pow(Math.max(0,(price+buyCost+noLevNet))/(price+buyCost),1/hy)-1)*100;
+
+  /* ── 금융자산 대안 ── */
+  const altGross=initialCash*Math.pow(1+altRate,hy);
+  const altGain=altGross-initialCash;
+  const altTax=altGain*altTaxRate;
+  const altNet=altGain-altTax;
+  const altAnnReturn=(Math.pow(Math.max(0,(initialCash+altNet))/initialCash,1/hy)-1)*100;
+  const altArr=[];for(let y=1;y<=hy;y++){altArr.push(Math.round(initialCash*Math.pow(1+altRate,y)))}
+
+  // Metrics
+  $('metrics').innerHTML=`
+    <div class="mc"><div class="mc-label">초기 투자금</div><div class="mc-value">${fM(Math.round(initialCash))}</div><div class="mc-sub">자기자본 ${fM(equity)}</div></div>
+    <div class="mc mc-blue"><div class="mc-label">대출</div><div class="mc-value blue">${loanAmt>0?fM(loanAmt):'없음'}</div><div class="mc-sub">${loanAmt>0?'월 '+Math.round(mp).toLocaleString()+'만원 상환':'전액 자기자본'}</div></div>
+    <div class="mc"><div class="mc-label">매도가 (${hy}년)</div><div class="mc-value">${fM(sellPrice)}</div><div class="mc-sub">상승률 ${fP(gr*100)}/년</div></div>
+    <div class="mc"><div class="mc-label">순수익</div><div class="mc-value ${netGain>=0?'':'red'}">${(netGain>=0?'+':'')+fM(Math.round(netGain))}</div><div class="mc-sub">매도수령 ${fM(Math.round(sellProceeds))}</div></div>
+    <div class="mc"><div class="mc-label">총 수익률</div><div class="mc-value ${netReturn>=0?'':'red'}">${(netReturn>=0?'+':'')+netReturn.toFixed(1)}%</div><div class="mc-sub">무레버 ${noLevReturn>=0?'+':''}${noLevReturn.toFixed(1)}%</div></div>
+    <div class="mc"><div class="mc-label">연평균 수익률</div><div class="mc-value ${annReturn>=0?'':'red'}">${(annReturn>=0?'+':'')+annReturn.toFixed(2)}%</div><div class="mc-sub">무레버 연 ${noLevAnn.toFixed(2)}%</div></div>`;
+
+  $('miniStats').innerHTML=`
+    <span>매도 수령 <b style="color:var(--text)">${fM(Math.round(sellProceeds))}</b></span>
+    <span>누적이자 <b style="color:var(--red)">−${fM(cumInt)}</b></span>
+    <span>누적보유세 <b style="color:var(--red)">−${fM(Math.round(cumHT))}</b></span>
+    <span>양도세 <b style="color:${cgt.total>0?'var(--red)':'var(--green)'}">${cgt.total>0?'−'+fM(Math.round(cgt.total)):'비과세'}</b></span>
+    <span>잔여대출 <b style="color:var(--text)">${fM(remainLoan)}</b></span>`;
+
+  // Alt compare cards
+  const altTotalReturn=(altNet/initialCash)*100;
+  const reWin=annReturn>altAnnReturn;
+  $('altCompare').innerHTML=`
+    <div class="alt-card"><div class="alt-card-title ${reWin?'green':''}">부동산 투자 ${reWin?'✓':''}</div>
+      <div class="alt-row"><span class="alt-k">초기투자금</span><span class="alt-v">${fM(Math.round(initialCash))}</span></div>
+      <div class="alt-row"><span class="alt-k">최종 순자산</span><span class="alt-v">${fM(Math.round(initialCash+netGain))}</span></div>
+      <div class="alt-row"><span class="alt-k">순수익</span><span class="alt-v" style="color:${netGain>=0?'var(--green)':'var(--red)'}">${(netGain>=0?'+':'')+fM(Math.round(netGain))}</span></div>
+      <div class="alt-row"><span class="alt-k">총 수익률</span><span class="alt-v" style="color:${netReturn>=0?'var(--green)':'var(--red)'}">${(netReturn>=0?'+':'')+netReturn.toFixed(1)}%</span></div>
+      <div class="alt-row"><span class="alt-k">연평균 수익률</span><span class="alt-v" style="color:${annReturn>=0?'var(--green)':'var(--red)'}">${annReturn.toFixed(2)}%</span></div>
+    </div>
+    <div class="alt-card"><div class="alt-card-title ${!reWin?'amber':''}">금융자산 대안 (수익률 ${fP(altRate*100)}, 세율 ${fP(altTaxRate*100)}) ${!reWin?'✓':''}</div>
+      <div class="alt-row"><span class="alt-k">초기투자금</span><span class="alt-v">${fM(Math.round(initialCash))}</span></div>
+      <div class="alt-row"><span class="alt-k">세전 자산</span><span class="alt-v">${fM(Math.round(altGross))}</span></div>
+      <div class="alt-row"><span class="alt-k">양도차익</span><span class="alt-v">${fM(Math.round(altGain))}</span></div>
+      <div class="alt-row"><span class="alt-k">세금 (${fP(altTaxRate*100)})</span><span class="alt-v" style="color:var(--red)">−${fM(Math.round(altTax))}</span></div>
+      <div class="alt-row"><span class="alt-k">세후 순수익</span><span class="alt-v" style="color:${altNet>=0?'var(--amber)':'var(--red)'}">${(altNet>=0?'+':'')+fM(Math.round(altNet))}</span></div>
+      <div class="alt-row"><span class="alt-k">총 수익률 (세후)</span><span class="alt-v" style="color:${altTotalReturn>=0?'var(--amber)':'var(--red)'}">${(altTotalReturn>=0?'+':'')+altTotalReturn.toFixed(1)}%</span></div>
+      <div class="alt-row"><span class="alt-k">연평균 수익률 (세후)</span><span class="alt-v" style="color:var(--amber)">${altAnnReturn.toFixed(2)}%</span></div>
+    </div>`;
+
+  // Tax panel
+  $('taxPanel').innerHTML=`
+    <div class="tax-row"><span class="tk">취득세 (${(acq.rate*100).toFixed(1)}%)</span><span class="tv neg">−${fW(Math.round(acq.total)*1e4)}</span></div>
+    <div class="tax-row"><span class="tk">매수 중개수수료</span><span class="tv neg">−${fW(Math.round(buyBk)*1e4)}</span></div>
+    <div class="tax-row"><span class="tk">누적 보유세 (${hy}년)</span><span class="tv neg">−${fW(Math.round(cumHT)*1e4)}</span></div>
+    <div class="tax-row"><span class="tk">누적 이자 비용</span><span class="tv neg">−${fW(Math.round(cumInt)*1e4)}</span></div>
+    <div class="tax-row"><span class="tk">양도세 (장특공제 ${cgt.lr}%, 필요경비 차감)</span><span class="tv ${cgt.total>0?'neg':'pos'}">${cgt.total>0?'−'+fW(Math.round(cgt.total)*1e4):'비과세'}</span></div>
+    <div class="tax-row"><span class="tk">매도 중개수수료</span><span class="tv neg">−${fW(Math.round(sellBk)*1e4)}</span></div>
+    <div class="tax-row"><span class="tk"><strong>최종 순수익</strong></span><span class="tv ${netGain>=0?'pos':'neg'}"><strong>${(netGain>=0?'+':'')+fW(Math.round(netGain)*1e4)}</strong></span></div>`;
+
+  // Chart
+  const eqD=years.map(y=>{const sp=y.mktVal,sb2=calcBF(sp,sbrR),cg2=calcCGT(price,sp,y.year,Math.min(ly,y.year),hc,reg,expenseDeduct);return Math.round(sp-y.remLoan-cg2.total-sb2)});
+  const costD=years.map(y=>Math.round(y.cumHT+y.cumInt));
+  if(chart)chart.destroy();
+  chart=new Chart($('ch').getContext('2d'),{type:'line',data:{labels:years.map(y=>y.year+'년'),datasets:[
+    {label:'시장가격',data:years.map(y=>y.mktVal*1e4),borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,.06)',fill:true,tension:.3,pointRadius:0,borderWidth:2},
+    {label:'자산순가치',data:eqD.map(v=>v*1e4),borderColor:'#0a8f6e',backgroundColor:'rgba(10,143,110,.06)',fill:true,tension:.3,pointRadius:0,borderWidth:2},
+    {label:'누적비용',data:costD.map(v=>v*1e4),borderColor:'#d9363e',borderDash:[4,4],tension:.3,pointRadius:0,fill:false,borderWidth:1.5},
+    {label:'금융자산 대안',data:altArr.map(v=>v*1e4),borderColor:'#c47d10',borderDash:[6,3],tension:.3,pointRadius:0,fill:false,borderWidth:1.5}
+  ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},scales:{y:{ticks:{color:'#9096a8',font:{family:'DM Mono',size:11},callback:v=>v>=1e8?(v/1e8).toFixed(0)+'억':v>=1e4?(v/1e4).toFixed(0)+'만':v},grid:{color:'rgba(0,0,0,.05)'}},x:{grid:{display:false},ticks:{color:'#9096a8',font:{family:'DM Mono',size:11},maxTicksLimit:10}}},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.dataset.label+': '+fW(c.parsed.y)}}}}});
+
+  // Monthly cashflow table
+  let cfh='';years.forEach(y=>{
+    const monthlyLoan=Math.round(y.lPay/12);
+    const monthlyHT=Math.round(y.ht/12);
+    const monthlyTotal=monthlyLoan+monthlyHT;
+    const annTotal=y.lPay+y.ht;
+    const daily=Math.round(annTotal/365);
+    cfh+=`<tr><td>${y.year}년</td><td>${fC(monthlyLoan)}</td><td>${fC(monthlyHT)}</td><td style="font-weight:500">${fC(monthlyTotal)}</td><td>${fC(annTotal)}</td><td>${fC(daily)}</td></tr>`;
+  });$('tbCF').innerHTML=cfh;
+
+  // Loan table
+  let lh='';ls.schedule.filter((_,i)=>i<hy).forEach((s,i)=>{lh+=`<tr><td>${s.year}년</td><td>${fC(s.payment)}</td><td>${fC(s.interest)}</td><td>${fC(s.principal)}</td><td>${fC(years[i].cumInt)}</td><td>${fM(s.balance)}</td></tr>`});$('tbLoan').innerHTML=lh;
+
+  // Year table
+  let yh='';years.forEach((y,i)=>{yh+=`<tr><td>${y.year}년</td><td>${fM(y.mktVal)}</td><td>${fM(y.ht)}</td><td>${fM(y.lPay)}</td><td>${fM(Math.round(y.cumHT+y.cumLP))}</td><td class="${eqD[i]>=initialCash?'pos':'neg'}">${fM(eqD[i])}</td></tr>`});$('tbYear').innerHTML=yh;
+
+  // Tax table
+  $('tbTax').innerHTML=`
+    <tr><td colspan=2 style="font-weight:600;color:var(--text3);font-size:11px;padding-top:8px;font-family:Pretendard,sans-serif">취득</td></tr>
+    <tr><td style="text-align:left;font-family:Pretendard,sans-serif">취득세 (${(acq.rate*100).toFixed(1)}%)</td><td>${fM(Math.round(acq.acqTax))}</td></tr>
+    <tr><td style="text-align:left;font-family:Pretendard,sans-serif">교육세+농특세</td><td>${fM(Math.round(acq.eduTax+acq.farmTax))}</td></tr>
+    <tr><td style="text-align:left;font-family:Pretendard,sans-serif">중개수수료</td><td>${fM(Math.round(buyBk))}</td></tr>
+    <tr><td style="text-align:left;font-weight:600;font-family:Pretendard,sans-serif">취득비용 소계 (= 양도 필요경비)</td><td style="font-weight:600">${fM(Math.round(buyCost))}</td></tr>
+    <tr><td colspan=2 style="font-weight:600;color:var(--text3);font-size:11px;padding-top:12px;font-family:Pretendard,sans-serif">보유 (${hy}년)</td></tr>
+    <tr><td style="text-align:left;font-family:Pretendard,sans-serif">누적 보유세</td><td>${fM(Math.round(cumHT))}</td></tr>
+    <tr><td style="text-align:left;font-family:Pretendard,sans-serif">누적 이자</td><td>${fM(Math.round(cumInt))}</td></tr>
+    <tr><td style="text-align:left;font-family:Pretendard,sans-serif">원금 상환</td><td>${fM(Math.round(cumPrin))}</td></tr>
+    <tr><td colspan=2 style="font-weight:600;color:var(--text3);font-size:11px;padding-top:12px;font-family:Pretendard,sans-serif">매도</td></tr>
+    <tr><td style="text-align:left;font-family:Pretendard,sans-serif">양도차익 (필요경비 차감 후)</td><td>${fM(Math.round(sellPrice-price-expenseDeduct))}</td></tr>
+    ${cgt.eg>0?`<tr><td style="text-align:left;font-family:Pretendard,sans-serif">비과세분</td><td>${fM(Math.round(cgt.eg))}</td></tr>`:''}
+    <tr><td style="text-align:left;font-family:Pretendard,sans-serif">장특공제 ${cgt.lr}% → 과세표준</td><td>${fM(Math.round(cgt.tg))}</td></tr>
+    <tr><td style="text-align:left;font-family:Pretendard,sans-serif">양도세+지방세</td><td>${fM(Math.round(cgt.total))}</td></tr>
+    <tr><td style="text-align:left;font-family:Pretendard,sans-serif">잔여대출 상환</td><td>${fM(remainLoan)}</td></tr>
+    <tr><td style="text-align:left;font-family:Pretendard,sans-serif">매도 중개수수료</td><td>${fM(Math.round(sellBk))}</td></tr>
+    <tr><td colspan=2 style="height:6px;border:none"></td></tr>
+    <tr><td style="text-align:left;font-weight:600;font-family:Pretendard,sans-serif">매도 수령액</td><td style="font-weight:600">${fM(Math.round(sellProceeds))}</td></tr>
+    <tr><td style="text-align:left;font-weight:600;font-family:Pretendard,sans-serif">순수익 (이자+보유세 차감)</td><td style="font-weight:600;color:${netGain>=0?'var(--green)':'var(--red)'}">${(netGain>=0?'+':'')+fM(Math.round(netGain))}</td></tr>`;
+}
+
+run();
+</script>
+<script>if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js');</script>
+</body>
+</html>
